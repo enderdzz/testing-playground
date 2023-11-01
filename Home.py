@@ -1,51 +1,98 @@
-# Copyright (c) Streamlit Inc. (2018-2022) Snowflake Inc. (2022)
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+import hmac
 import streamlit as st
-from streamlit.logger import get_logger
+import subprocess
 
-LOGGER = get_logger(__name__)
+st.set_page_config(
+    page_title="HomePage",
+    page_icon="🏠",
+)
 
+def set_limits():
+    # Limit the process to use a maximum of 1 CPU second
+    resource.setrlimit(resource.RLIMIT_CPU, (1, 1))
+    
+    # Limit the process to a maximum memory usage of 100MB
+    resource.setrlimit(resource.RLIMIT_AS, (100*1024*1024, 100*1024*1024))
 
-def run():
-    st.set_page_config(
-        page_title="Hello",
-        page_icon="👋",
-    )
+def execute_code_safely(code: str) -> tuple:
+    try:
+        # Using a separate python executable to run the code
+        result = subprocess.run(
+            ["python3", "-c", code],
+            stdout=subprocess.PIPE,     # Capture standard output
+            stderr=subprocess.PIPE,     # Capture standard error
+            #preexec_fn=set_limits,      # Set resource limits before executing
+            timeout=100                   # Kill the process if it runs for more than 5 seconds
+        )
+        
+        # Return the combined stdout and stderr
+        return (result.stdout.decode("utf-8"), result.stderr.decode("utf-8"))
 
-    st.write("# Welcome to Streamlit! 👋")
+    except subprocess.TimeoutExpired:
+        return ("", "Execution timed out!")
+    except Exception as e:
+        return ("", f"Error: {str(e)}")
 
-    st.sidebar.success("Select a demo above.")
+def check_password():
+    """Returns `True` if the user had a correct password."""
 
-    st.markdown(
-        """
-        Streamlit is an open-source app framework built specifically for
-        Machine Learning and Data Science projects.
-        **👈 Select a demo from the sidebar** to see some examples
-        of what Streamlit can do!
-        ### Want to learn more?
-        - Check out [streamlit.io](https://streamlit.io)
-        - Jump into our [documentation](https://docs.streamlit.io)
-        - Ask a question in our [community
-          forums](https://discuss.streamlit.io)
-        ### See more complex demos
-        - Use a neural net to [analyze the Udacity Self-driving Car Image
-          Dataset](https://github.com/streamlit/demo-self-driving)
-        - Explore a [New York City rideshare dataset](https://github.com/streamlit/demo-uber-nyc-pickups)
-    """
-    )
+    def login_form():
+        """Form with widgets to collect user information"""
+        with st.form("Credentials"):
+            st.text_input("Username", key="username")
+            st.text_input("Password", type="password", key="password")
+            st.form_submit_button("Log in", on_click=password_entered)
 
+    def password_entered():
+        """Checks whether a password entered by the user is correct."""
+        if st.session_state["username"] in st.secrets[
+            "passwords"
+        ] and hmac.compare_digest(
+            st.session_state["password"],
+            st.secrets.passwords[st.session_state["username"]],
+        ):
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]  # Don't store the username or password.
+            del st.session_state["username"]
+        else:
+            st.session_state["password_correct"] = False
+
+    # Return True if the username + password is validated.
+    if st.session_state.get("password_correct", False):
+        return True
+
+    # Show inputs for username + password.
+    login_form()
+    if "password_correct" in st.session_state:
+        st.error("😕 User not known or password incorrect")
+    return False
+
+def fetch_version_number(option):
+    if option == 'TensorFlow':
+        return '2.16.0.dev20231101'
+    elif option == 'PyTorch':
+        return '2.2.0'
+    elif option == 'TVM':
+        return '0.15.dev0'
+
+def main():
+    st.title("🕵️‍♂️ TensorScope -- Deep Learning Infra Fuzzing Platform")
+    
+    option = st.selectbox('Target Framework', ('TensorFlow', 'PyTorch', 'TVM'))
+
+    st.write(f'{option} version: {fetch_version_number(option)}')
+    
+    is_authed = check_password()
+
+    code = st.text_area("Enter your Python code here:")
+    if st.button("Run Code"):
+        if is_authed == False: 
+            st.error("😕 You need to authenticate first.")
+            return
+        # Execute code and display output (to be implemented in next steps)
+        output, err = execute_code_safely(code)
+        st.text_area("Output", value=output, height=300, max_chars=None)
+        st.text_area("Error", value=err, height=300, max_chars=None)
 
 if __name__ == "__main__":
-    run()
+    main()
