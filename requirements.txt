@@ -7,5 +7,5 @@ tf-nightly-cpu
 torch
 torchvision
 torchaudio
-mlc-chat-nightly --pre -f https://mlc.ai/wheels
-mlc-ai-nightly --pre -f https://mlc.ai/wheels
+--pre -f https://mlc.ai/wheels mlc-chat-nightly 
+--pre -f https://mlc.ai/wheels mlc-ai-nightly 
