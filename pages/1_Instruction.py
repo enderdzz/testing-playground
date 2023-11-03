@@ -1,6 +1,6 @@
 import streamlit as st
 
-st.set_page_config(page_title="Target Installation Instructions", page_icon="📚")
+st.set_page_config(page_title="Target Installation Instructions", page_icon="📜")
 
 st.markdown("# Target Installation Instructions")
 

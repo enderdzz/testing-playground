@@ -1,4 +1,5 @@
 import hmac
+import resource
 import streamlit as st
 import subprocess
 
@@ -15,13 +16,17 @@ def set_limits():
     resource.setrlimit(resource.RLIMIT_AS, (100*1024*1024, 100*1024*1024))
 
 def execute_code_safely(code: str) -> tuple:
+    if st.session_state["current_user"] == 'admin':
+        preexec_fn = None
+    else:
+        preexec_fn = set_limits
     try:
         # Using a separate python executable to run the code
         result = subprocess.run(
             ["python3", "-c", code],
             stdout=subprocess.PIPE,     # Capture standard output
             stderr=subprocess.PIPE,     # Capture standard error
-            #preexec_fn=set_limits,      # Set resource limits before executing
+            preexec_fn=preexec_fn,      # Set resource limits before executing
             timeout=100                   # Kill the process if it runs for more than 5 seconds
         )
         
@@ -35,10 +40,11 @@ def execute_code_safely(code: str) -> tuple:
 
 def check_password():
     """Returns `True` if the user had a correct password."""
-
+    
     def login_form():
         """Form with widgets to collect user information"""
         with st.form("Credentials"):
+            st.session_state["current_user"] = None
             st.text_input("Username", key="username")
             st.text_input("Password", type="password", key="password")
             st.form_submit_button("Log in", on_click=password_entered)
@@ -52,6 +58,7 @@ def check_password():
             st.secrets.passwords[st.session_state["username"]],
         ):
             st.session_state["password_correct"] = True
+            st.session_state["current_user"] = st.session_state["username"]
             del st.session_state["password"]  # Don't store the username or password.
             del st.session_state["username"]
         else:
@@ -83,7 +90,8 @@ def main():
     st.write(f'{option} version: {fetch_version_number(option)}')
     
     is_authed = check_password()
-
+    st.write(f'Current user: {st.session_state["current_user"]}')
+    
     code = st.text_area("Enter your Python code here:")
     if st.button("Run Code"):
         if is_authed == False: 
