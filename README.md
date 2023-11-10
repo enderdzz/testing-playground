@@ -1,0 +1,1 @@
+Our goal is to build a modular deep learning infrastructure testing platform that visualizes as much as possible the elements (data + code + methods) during the testing process.
