@@ -10,6 +10,7 @@ torchaudio
 openai
 tiktoken
 chromadb
+pysqlite3-binary
 
 --pre
 --find-links https://mlc.ai/wheels 
