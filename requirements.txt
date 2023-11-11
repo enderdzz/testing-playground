@@ -11,6 +11,10 @@ openai
 tiktoken
 chromadb
 pysqlite3-binary
+scikit-learn
+matplotlib
+loguru
+plotly
 
 --pre
 --find-links https://mlc.ai/wheels 

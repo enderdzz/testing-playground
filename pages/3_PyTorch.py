@@ -1,9 +1,17 @@
+__import__('pysqlite3')
+import sys
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+
 import streamlit as st
 import torch
+import torch.nn
 import pandas as pd
 from openai import OpenAI
 import inspect
-import torch.nn
+from sklearn.decomposition import PCA
+import plotly.graph_objects as go
+import plotly.express as px
+import numpy as np
 import tiktoken
 import chromadb
 #chroma_client = chromadb.Client()
@@ -13,17 +21,20 @@ collection = chroma_client.get_or_create_collection(name="torch_api")
 st.set_page_config(page_title="PyTorch API", page_icon="📚")
 st.markdown("# PyTorch API Reference")
 
-def get_api_list(pkg):
+whole_api_list = []
+
+def get_api_list(pkg, pkg_name):
     frame = []
     for api in dir(pkg):
+        whole_api_list.append(f"{pkg_name}.{api}")
         frame.append([api])
     return pd.DataFrame(frame, columns=("API Name",))
 
 st.write("Package: torch")
-st.dataframe(get_api_list(torch))
+st.dataframe(get_api_list(torch, 'torch'))
 
 st.write("Package: torch.nn")
-st.dataframe(get_api_list(torch.nn))
+st.dataframe(get_api_list(torch.nn, 'torch.nn'))
 
 # Function to retrieve the source code of a given function or class
 def get_source_code(api_name):
@@ -48,14 +59,35 @@ def calculate_embedding(text, model="text-embedding-ada-002"):
     text = text.replace("\n", " ")
     return client.embeddings.create(input = [text], model=model).data[0].embedding
 
-def visualize_2d():
+def visualize_2d(embs):
     pass
 
-def visualize_3d():
-    pass
+def visualize_3d(embs):
+    pca = PCA(n_components=3)
+    vis_dims = pca.fit_transform(embs)
+    sub_matrix = np.array(vis_dims.tolist())
+    x=sub_matrix[:, 0]
+    y=sub_matrix[:, 1]
+    z=sub_matrix[:, 2]
+    fig = go.Figure(data=[go.Scatter3d(x=x, y=y, z=z, mode='markers')])
+    #fig = px.scatter_3d(x=x, y=y, z=z)
+    fig.update_layout(width=900, height=900)
+    def set_bgcolor(bg_color = "rgb(211, 211, 211)",
+                grid_color="rgb(150, 150, 150)", 
+                zeroline=False):
+        return dict(showbackground=True,
+                backgroundcolor=bg_color,
+                gridcolor=grid_color,
+                zeroline=zeroline)
+    fig.update_scenes(xaxis=set_bgcolor(), 
+                  yaxis=set_bgcolor(), 
+                  zaxis=set_bgcolor())
+    st.plotly_chart(fig, theme=None)
 
 api_key  = st.text_input('Enter an OpenAI Key', None)
 api_name = st.text_input('Enter an API', 'torch.nn.GRUCell')
+if api_name not in whole_api_list:
+    st.error('Bad API name!')
 source_code = get_source_code(api_name)
 st.text_area("Soure Code", value=source_code, height=300, max_chars=None)
 st.write(f"There are {num_tokens_from_string(source_code, 'cl100k_base')} tokens.")
@@ -82,9 +114,10 @@ if 'need_openai_key' in st.session_state:
 if 'embedding' in st.session_state:
     st.text_area(f"Output Embedding (Dim: {len(st.session_state.embedding)})", value=st.session_state.embedding, height=300, max_chars=None)
 
-
-visualize_2d()
-visualize_3d()
+if st.button('Visualize Embedding!'):
+    embs = np.array(collection.get(include=['embeddings'],)['embeddings'])
+    visualize_2d(embs)
+    visualize_3d(embs)
 # ['ada_embedding'] = df.combined.apply(lambda x: get_embedding(x, model='text-embedding-ada-002'))
 # df.to_csv('output/embedded_1k_reviews.csv', index=False)
 
