@@ -7,7 +7,9 @@ tf-nightly-cpu
 torch
 torchvision
 torchaudio
-
+openai
+tiktoken
+chromadb
 
 --pre
 --find-links https://mlc.ai/wheels 

@@ -5,6 +5,9 @@ from openai import OpenAI
 import inspect
 import torch.nn
 import tiktoken
+import chromadb
+chroma_client = chromadb.Client()
+collection = chroma_client.create_collection(name="torch_api")
 
 st.set_page_config(page_title="PyTorch API", page_icon="📚")
 st.markdown("# PyTorch API Reference")
@@ -40,21 +43,35 @@ def num_tokens_from_string(string: str, encoding_name: str) -> int:
     # encoding = tiktoken.encoding_for_model('gpt-3.5-turbo')
     return len(encoding.encode(string))
 
+def get_embedding(text, model="text-embedding-ada-002"):
+   text = text.replace("\n", " ")
+   return client.embeddings.create(input = [text], model=model).data[0].embedding
+
+def visualize_2d():
+    pass
+
+def visualize_3d():
+    pass
+
 api_key  = st.text_input('Enter an OpenAI Key', None)
 api_name = st.text_input('Enter an API', 'torch.nn.GRUCell')
 source_code = get_source_code(api_name)
 st.text_area("Soure Code", value=source_code, height=300, max_chars=None)
 st.write(f"There are {num_tokens_from_string(source_code, 'cl100k_base')} tokens.")
 
-def get_embedding(text, model="text-embedding-ada-002"):
-   text = text.replace("\n", " ")
-   return client.embeddings.create(input = [text], model=model).data[0].embedding
-
 if api_key != None:
     client = OpenAI(api_key=api_key)
     embedding = get_embedding(source_code, model='text-embedding-ada-002')
-    st.text_area("Output Embedding", value=embedding, height=300, max_chars=None)
-
+    collection.add(
+        embeddings=[embedding,],
+        documents=[source_code,],
+        metadatas=[{"source": api_name},],
+        ids=[api_name,]
+    )
+    st.text_area(f"Output Embedding (Dim: {len(embedding)})", value=embedding, height=300, max_chars=None)
+    
+    visualize_2d()
+    visualize_3d()
 # ['ada_embedding'] = df.combined.apply(lambda x: get_embedding(x, model='text-embedding-ada-002'))
 # df.to_csv('output/embedded_1k_reviews.csv', index=False)
 
