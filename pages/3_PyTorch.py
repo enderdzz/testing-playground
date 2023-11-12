@@ -84,7 +84,7 @@ def visualize_3d(embs):
                   zaxis=set_bgcolor())
     st.plotly_chart(fig, theme=None)
 
-api_key  = st.text_input('Enter an OpenAI Key', None)
+api_key  = st.text_input('Enter an OpenAI Key', None, type="password")
 api_name = st.text_input('Enter an API', 'torch.nn.GRUCell')
 if api_name not in whole_api_list:
     st.error('Bad API name!')
