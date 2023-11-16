@@ -89,7 +89,7 @@ api_name = st.text_input('Enter an API', 'torch.nn.GRUCell')
 if api_name not in whole_api_list:
     st.error('Bad API name!')
 source_code = get_source_code(api_name)
-st.text_area("Soure Code", value=source_code, height=300, max_chars=None)
+st.code(source_code, language='python', line_numbers=True)
 st.write(f"There are {num_tokens_from_string(source_code, 'cl100k_base')} tokens.")
 
 def show_embedding():

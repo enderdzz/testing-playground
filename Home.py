@@ -37,6 +37,9 @@ def execute_code_safely(code: str) -> tuple:
         return ("", "Execution timed out!")
     except Exception as e:
         return ("", f"Error: {str(e)}")
+    
+def execute_model_safely(code: str) -> tuple:
+    return ("", "")
 
 def check_password():
     """Returns `True` if the user had a correct password."""
@@ -92,13 +95,23 @@ def main():
     is_authed = check_password()
     st.write(f'Current user: {st.session_state["current_user"]}')
     
-    code = st.text_area("Enter your Python code here:")
+    code = st.text_area("Enter API code that you want to test here:")
     if st.button("Run Code"):
         if is_authed == False: 
             st.error("😕 You need to authenticate first.")
             return
         # Execute code and display output (to be implemented in next steps)
         output, err = execute_code_safely(code)
+        st.text_area("Output", value=output, height=300, max_chars=None)
+        st.text_area("Error", value=err, height=300, max_chars=None)
+        
+    code = st.text_area("Enter a DL model that you want to test here:")
+    if st.button("Run Code"):
+        if is_authed == False: 
+            st.error("😕 You need to authenticate first.")
+            return
+        # Execute code and display output (to be implemented in next steps)
+        output, err = execute_model_safely(code)
         st.text_area("Output", value=output, height=300, max_chars=None)
         st.text_area("Error", value=err, height=300, max_chars=None)
 
