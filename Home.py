@@ -106,7 +106,7 @@ def main():
         st.text_area("Error", value=err, height=300, max_chars=None)
         
     code = st.text_area("Enter a DL model that you want to test here:")
-    if st.button("Run Code"):
+    if st.button("Run Model"):
         if is_authed == False: 
             st.error("😕 You need to authenticate first.")
             return

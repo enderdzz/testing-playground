@@ -9,6 +9,7 @@ import pandas as pd
 from openai import OpenAI
 import inspect
 from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans
 import plotly.graph_objects as go
 import plotly.express as px
 import numpy as np
@@ -62,16 +63,25 @@ def calculate_embedding(text, model="text-embedding-ada-002"):
 def visualize_2d(embs):
     pass
 
-def visualize_3d(embs):
+def visualize_3d(embs, api_list):
     pca = PCA(n_components=3)
     vis_dims = pca.fit_transform(embs)
     sub_matrix = np.array(vis_dims.tolist())
-    x=sub_matrix[:, 0]
-    y=sub_matrix[:, 1]
-    z=sub_matrix[:, 2]
-    fig = go.Figure(data=[go.Scatter3d(x=x, y=y, z=z, mode='markers')])
-    #fig = px.scatter_3d(x=x, y=y, z=z)
+    kmeans_model = KMeans(n_clusters=20, n_init=10) # from 8 to 20
+    kmeans_model.fit(sub_matrix)
+    cluster_list = kmeans_model.labels_
+    
+    df = pd.DataFrame({'x': sub_matrix[:, 0],
+                       'y': sub_matrix[:, 1],
+                       'z': sub_matrix[:, 2],
+                       'api_name': api_list,
+                       'cluster': cluster_list,
+                       })
+    fig = px.scatter_3d(df, x='x', y='y', z='z', color='cluster', hover_name='api_name')
+    #fig = px.scatter_3d(df, x='x', y='y', z='z', mode='markers+text', , color='cluster')
     fig.update_layout(width=900, height=900)
+    fig.update_traces(textposition='middle center')
+    fig.update_layout(uniformtext_minsize=12, uniformtext_mode='hide')
     def set_bgcolor(bg_color = "rgb(211, 211, 211)",
                 grid_color="rgb(150, 150, 150)", 
                 zeroline=False):
@@ -115,9 +125,10 @@ if 'embedding' in st.session_state:
     st.text_area(f"Output Embedding (Dim: {len(st.session_state.embedding)})", value=st.session_state.embedding, height=300, max_chars=None)
 
 if st.button('Visualize Embedding!'):
+    apis = collection.get()['ids']
     embs = np.array(collection.get(include=['embeddings'],)['embeddings'])
     visualize_2d(embs)
-    visualize_3d(embs)
+    visualize_3d(embs, apis)
 # ['ada_embedding'] = df.combined.apply(lambda x: get_embedding(x, model='text-embedding-ada-002'))
 # df.to_csv('output/embedded_1k_reviews.csv', index=False)
 
