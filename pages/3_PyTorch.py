@@ -17,7 +17,7 @@ import tiktoken
 import chromadb
 #chroma_client = chromadb.Client()
 chroma_client = chromadb.PersistentClient(path="./embedding-db")
-collection = chroma_client.get_or_create_collection(name="torch_api")
+collection = chroma_client.get_or_create_collection(name="torch.nn")
 
 st.set_page_config(page_title="PyTorch API", page_icon="📚")
 st.markdown("# PyTorch API Reference")
@@ -31,11 +31,13 @@ def get_api_list(pkg, pkg_name):
         frame.append([api])
     return pd.DataFrame(frame, columns=("API Name",))
 
-st.write("Package: torch")
-st.dataframe(get_api_list(torch, 'torch'))
+# TODO: change Tabs UI
+package_list = ['torch', 'torch.nn', ]
 
-st.write("Package: torch.nn")
-st.dataframe(get_api_list(torch.nn, 'torch.nn'))
+for index, tab in enumerate(st.tabs(package_list)):
+    with tab:
+        st.write(f"Package: {package_list[index]}")
+        st.dataframe(get_api_list(eval(package_list[index]), package_list[index]))
 
 # Function to retrieve the source code of a given function or class
 def get_source_code(api_name):
@@ -67,6 +69,7 @@ def visualize_3d(embs, api_list):
     pca = PCA(n_components=3)
     vis_dims = pca.fit_transform(embs)
     sub_matrix = np.array(vis_dims.tolist())
+    
     kmeans_model = KMeans(n_clusters=20, n_init=10) # from 8 to 20
     kmeans_model.fit(sub_matrix)
     cluster_list = kmeans_model.labels_
@@ -78,7 +81,6 @@ def visualize_3d(embs, api_list):
                        'cluster': cluster_list,
                        })
     fig = px.scatter_3d(df, x='x', y='y', z='z', color='cluster', hover_name='api_name')
-    #fig = px.scatter_3d(df, x='x', y='y', z='z', mode='markers+text', , color='cluster')
     fig.update_layout(width=900, height=900)
     fig.update_traces(textposition='middle center')
     fig.update_layout(uniformtext_minsize=12, uniformtext_mode='hide')
@@ -123,6 +125,7 @@ if 'need_openai_key' in st.session_state:
     st.error("Please enter an OpenAI key.")
 if 'embedding' in st.session_state:
     st.text_area(f"Output Embedding (Dim: {len(st.session_state.embedding)})", value=st.session_state.embedding, height=300, max_chars=None)
+
 
 if st.button('Visualize Embedding!'):
     apis = collection.get()['ids']

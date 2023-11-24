@@ -38,7 +38,7 @@ def get_api_list(pkg, pkg_name):
         api_list.append(f"{pkg_name}.{api}")
 
 chroma_client = chromadb.PersistentClient(path="../embedding-db")
-collection = chroma_client.get_or_create_collection(name="torch_api")
+collection = chroma_client.get_or_create_collection(name="torch.nn")
 # get_api_list(torch)
 get_api_list(torch.nn, pkg_name='torch.nn')
 

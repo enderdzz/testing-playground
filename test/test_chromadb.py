@@ -12,7 +12,7 @@ import pandas as pd
 
 # chroma_client = chromadb.Client()
 chroma_client = chromadb.PersistentClient(path="../embedding-db")
-collection = chroma_client.get_or_create_collection(name="torch_api")
+collection = chroma_client.get_collection(name="torch.nn")
 # collection.add(
 #         embeddings=[[1.0, 0.1],],
 #         documents=["A person",],
