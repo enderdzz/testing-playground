@@ -3,6 +3,7 @@ import sys
 sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
 import streamlit as st
+import types
 import torch
 import torch.nn
 import pandas as pd
@@ -27,17 +28,20 @@ whole_api_list = []
 def get_api_list(pkg, pkg_name):
     frame = []
     for api in dir(pkg):
-        whole_api_list.append(f"{pkg_name}.{api}")
-        frame.append([api])
-    return pd.DataFrame(frame, columns=("API Name",))
+        full_name = f"{pkg_name}.{api}"
+        if type(full_name) == types.ModuleType:
+            pass # colorize the item.
+        whole_api_list.append(full_name)
+        frame.append([full_name, str(type(eval(full_name)))])
+    return pd.DataFrame(frame, columns=("API Name", "Type"))
 
-# TODO: change Tabs UI
-package_list = ['torch', 'torch.nn', ]
+package_list = ['torch', 'torch.nn', 'torch.nn.functional']
 
 for index, tab in enumerate(st.tabs(package_list)):
     with tab:
-        st.write(f"Package: {package_list[index]}")
-        st.dataframe(get_api_list(eval(package_list[index]), package_list[index]))
+        pkg = package_list[index]
+        st.write(f"Package: {pkg}")
+        st.dataframe(get_api_list(eval(pkg), pkg))
 
 # Function to retrieve the source code of a given function or class
 def get_source_code(api_name):

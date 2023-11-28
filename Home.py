@@ -2,6 +2,7 @@ import hmac
 import resource
 import streamlit as st
 import subprocess
+import tf2onnx
 
 st.set_page_config(
     page_title="HomePage",
@@ -88,23 +89,30 @@ def fetch_version_number(option):
 def main():
     st.title("🕵️‍♂️ TensorScope -- Deep Learning Infra Fuzzing Platform")
     
-    option = st.selectbox('Target Framework', ('TensorFlow', 'PyTorch', 'TVM'))
-
-    st.write(f'{option} version: {fetch_version_number(option)}')
+    # option = st.selectbox('Target Framework', ('TensorFlow', 'PyTorch', 'TVM'))
+    # st.write(f'{option} version: {fetch_version_number(option)}')
     
     is_authed = check_password()
     st.write(f'Current user: {st.session_state["current_user"]}')
     
-    code = st.text_area("Enter API code that you want to test here:")
-    if st.button("Run Code"):
-        if is_authed == False: 
-            st.error("😕 You need to authenticate first.")
-            return
+    api = st.text_input("Enter an API that you want to test here:")
+    source_framework = st.selectbox(
+    'Source framework',
+    ('TensorFlow', 'PyTorch', 'MindSpore', 'ONNX'))
+    target_framework = st.selectbox(
+    'Target framework',
+    ('TensorFlow', 'PyTorch', 'MindSpore', 'ONNX'))
+    st.write(f"🧪 between {source_framework} 🆚 {target_framework}")
+    if st.button("Find the counterparts & constraints"):
+        pass
+        # if is_authed == False: 
+        #     st.error("😕 You need to authenticate first.")
+        #     return
         # Execute code and display output (to be implemented in next steps)
-        output, err = execute_code_safely(code)
-        st.text_area("Output", value=output, height=300, max_chars=None)
-        st.text_area("Error", value=err, height=300, max_chars=None)
-        
+        # output, err = execute_code_safely(code)
+        # st.text_area("Output", value=output, height=300, max_chars=None)
+        # st.text_area("Error", value=err, height=300, max_chars=None)
+    
     code = st.text_area("Enter a DL model that you want to test here:")
     if st.button("Run Model"):
         if is_authed == False: 
