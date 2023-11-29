@@ -17,6 +17,7 @@ loguru
 plotly
 onnxruntime
 tf2onnx
+onnx2torch
 
 --pre
 --find-links https://mlc.ai/wheels 

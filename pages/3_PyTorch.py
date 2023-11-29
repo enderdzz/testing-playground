@@ -15,7 +15,9 @@ import plotly.graph_objects as go
 import plotly.express as px
 import numpy as np
 import tiktoken
+from onnx2torch import convert
 import chromadb
+
 #chroma_client = chromadb.Client()
 chroma_client = chromadb.PersistentClient(path="./embedding-db")
 collection = chroma_client.get_or_create_collection(name="torch.nn")

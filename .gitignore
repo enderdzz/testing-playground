@@ -3,3 +3,5 @@ TODOLIST
 LOCAL_GUIDANCE
 *.log
 data
+
+__pycache__
