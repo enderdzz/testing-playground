@@ -6,6 +6,8 @@ import tf2onnx
 import netron
 from utils.differential_testing import *
 import streamlit.components.v1 as components
+import threading
+import time
 
 st.set_page_config(
     page_title="HomePage",
@@ -90,7 +92,7 @@ def fetch_version_number(option):
         return '0.15.dev0'
 
 def show_model(model_path, port):
-    netron.start(model_path, address=("127.0.0.1", port), browse=False)
+    #netron.start(model_path, address=("127.0.0.1", port), browse=True)
     components.iframe(f"http://localhost:{port}", height=500, scrolling=True)
     
 def main():
@@ -105,32 +107,51 @@ def main():
     api = st.text_input("Enter an API that you want to test here:", placeholder="tf.dynamic_stitch")
     source_framework = st.selectbox(
     'Select the source framework',
-    ('TensorFlow', 'PyTorch', 'MindSpore', 'ONNX'))
+    ('TensorFlow', 'PyTorch', 'MindSpore', 'ONNX',))
     target_framework = st.selectbox(
     'Select the target framework',
-    ('TensorFlow', 'PyTorch', 'MindSpore', 'ONNX'))
+    ('ONNX', 'MindSpore', 'PyTorch', 'TensorFlow',))
     st.write(f"🧪 between {source_framework} 🆚 {target_framework}")
-    if st.button("Find the counterparts & constraints"):
+    if st.button("Find Counterparts & Constraints"):
         if is_authed == False: 
             st.error("😕 You need to authenticate first.")
             return
-        tf_model = gen_model(api, source_framework)
-        st.write("This is the first computational graph.")
-        show_model("models/model.onnx", 8081)
+        #m1, m2 = gen_model_pair(api, source_framework, target_framework)
+        m1 = "onnx_test/tf_model/tf.raw_ops.AdjustContrastv2_frozen_graph.pb"
+        m2 = "onnx_test/onnx_model/tf.raw_ops.AdjustContrastv2_model.onnx"
+        st.write("This is the 1st computational graph.")
+        
+        def display_netron(path, port):
+            os.system(f'netron {path} -p {port}')
+    
+        thread = threading.Thread(target=display_netron, args=(m1,8081))
+        thread.start()
+        time.sleep(1)
+        show_model(m1, 8081)
+        
+        st.write("This is the 2nd computational graph.")
+        
+        thread = threading.Thread(target=display_netron, args=(m2,8082))
+        thread.start()
+        time.sleep(1)
+        show_model(m2, 8082)
         # Execute code and display output (to be implemented in next steps)
         # output, err = execute_code_safely(code)
         # st.text_area("Output", value=output, height=300, max_chars=None)
         # st.text_area("Error", value=err, height=300, max_chars=None)
     
-    code = st.text_area("Enter a DL model that you want to test here:")
-    if st.button("Run Model"):
+    # code = st.text_area("Enter a DL model that you want to test here:")
+    if st.button("Start Differential Testing"):
         if is_authed == False: 
             st.error("😕 You need to authenticate first.")
             return
         # Execute code and display output (to be implemented in next steps)
-        output, err = execute_model_safely(code)
-        st.text_area("Output", value=output, height=300, max_chars=None)
-        st.text_area("Error", value=err, height=300, max_chars=None)
+        # output, err = execute_model_safely(code)
+        # st.text_area("Output", value=output, height=300, max_chars=None)
+        # st.text_area("Error", value=err, height=300, max_chars=None)
+        with open("onnx_test/onnx_fuzz_log/onnx_test.log", 'r') as f:
+            log = f.read()
+        st.text_area("Output", value=log, height=300, max_chars=None)
 
 if __name__ == "__main__":
     main()
